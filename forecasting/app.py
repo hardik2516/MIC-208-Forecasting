@@ -2,7 +2,6 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 import plotly.graph_objects as go
-from plotly.subplots import make_subplots
 from pathlib import Path
 
 # ─── Page Config ────────────────────────────────────────────────
@@ -254,7 +253,7 @@ st.markdown("""
 <div class="hero-header">
     <h1>📈 Sales Forecasting Dashboard</h1>
     <p class="hero-subtitle">
-        Analyze historical writing‑paper sales with Moving Averages &amp; Exponential Smoothing
+        Analyze historical writing&#8209;paper sales with Moving Averages &amp; Exponential Smoothing
     </p>
 </div>
 """, unsafe_allow_html=True)
@@ -262,10 +261,16 @@ st.markdown("""
 st.markdown('<div class="premium-divider"></div>', unsafe_allow_html=True)
 
 # ─── Load Data ───────────────────────────────────────────────────
-DATA_DIR = Path(__file__).parent
+DATA_DIR = Path(__file__).resolve().parent
 df = pd.read_csv(DATA_DIR / "monthly-writing-paper-sales.csv")
 df.columns = ["Month", "Sales"]
-df['Month'] = pd.date_range(start='2001-01', periods=len(df), freq='M')
+df["Sales"] = pd.to_numeric(df["Sales"], errors="coerce")
+df.dropna(subset=["Sales"], inplace=True)
+
+try:
+    df["Month"] = pd.date_range(start="2001-01", periods=len(df), freq="ME")
+except ValueError:
+    df["Month"] = pd.date_range(start="2001-01", periods=len(df), freq="M")
 
 # ─── Sidebar ─────────────────────────────────────────────────────
 with st.sidebar:
@@ -296,42 +301,44 @@ with st.sidebar:
     st.markdown('<div class="premium-divider"></div>', unsafe_allow_html=True)
     st.markdown(
         '<p style="font-size:0.72rem;color:#475569;text-align:center;">'
-        'Built with Streamlit · Data: Monthly Writing‑Paper Sales</p>',
+        'Built with Streamlit · Data: Monthly Writing&#8209;Paper Sales</p>',
         unsafe_allow_html=True,
     )
 
 # ─── Compute Forecasts ──────────────────────────────────────────
-df['SMA'] = df['Sales'].rolling(window=n).mean()
+df["SMA"] = df["Sales"].rolling(window=n).mean()
 
 weights = np.arange(1, n + 1)
-df['WMA'] = df['Sales'].rolling(n).apply(
+df["WMA"] = df["Sales"].rolling(n).apply(
     lambda x: np.dot(x, weights) / weights.sum(), raw=True
 )
 
-df['Exp_Smoothing'] = df['Sales'].ewm(alpha=alpha, adjust=False).mean()
+df["Exp_Smoothing"] = df["Sales"].ewm(alpha=alpha, adjust=False).mean()
 
 # ─── KPI Metrics ────────────────────────────────────────────────
-latest = df['Sales'].iloc[-1]
-avg_sales = df['Sales'].mean()
-peak = df['Sales'].max()
-low = df['Sales'].min()
+latest = df["Sales"].iloc[-1]
+avg_sales = df["Sales"].mean()
+peak = df["Sales"].max()
 
 # MAE for each method (drop NaN rows)
 valid = df.dropna()
-mae_sma = np.mean(np.abs(valid['Sales'] - valid['SMA']))
-mae_wma = np.mean(np.abs(valid['Sales'] - valid['WMA']))
-mae_exp = np.mean(np.abs(valid['Sales'] - valid['Exp_Smoothing']))
+mae_sma = np.mean(np.abs(valid["Sales"] - valid["SMA"]))
+mae_wma = np.mean(np.abs(valid["Sales"] - valid["WMA"]))
+mae_exp = np.mean(np.abs(valid["Sales"] - valid["Exp_Smoothing"]))
 best_method = min(
     [("SMA", mae_sma), ("WMA", mae_wma), ("Exponential", mae_exp)],
     key=lambda x: x[1],
 )
+
+latest_month = df["Month"].iloc[-1].strftime("%b %Y")
+peak_month = df.loc[df["Sales"].idxmax(), "Month"].strftime("%b %Y")
 
 st.markdown(f"""
 <div class="metric-grid">
     <div class="metric-card">
         <div class="metric-label">Latest Sales</div>
         <div class="metric-value">{latest:,.0f}</div>
-        <div class="metric-sub">{df['Month'].iloc[-1].strftime('%b %Y')}</div>
+        <div class="metric-sub">{latest_month}</div>
     </div>
     <div class="metric-card">
         <div class="metric-label">Average Sales</div>
@@ -341,7 +348,7 @@ st.markdown(f"""
     <div class="metric-card">
         <div class="metric-label">Peak Sales</div>
         <div class="metric-value">{peak:,.0f}</div>
-        <div class="metric-sub">{df.loc[df['Sales'].idxmax(), 'Month'].strftime('%b %Y')}</div>
+        <div class="metric-sub">{peak_month}</div>
     </div>
     <div class="metric-card">
         <div class="metric-label">Best Model (MAE)</div>
@@ -361,79 +368,79 @@ fig = go.Figure()
 
 # Actual Sales
 fig.add_trace(go.Scatter(
-    x=df['Month'], y=df['Sales'],
-    name='Actual Sales',
-    mode='lines',
-    line=dict(color='#E2E8F0', width=2),
-    fill='tozeroy',
-    fillcolor='rgba(226,232,240,0.04)',
-    hovertemplate='<b>Actual</b><br>%{x|%b %Y}<br>Sales: %{y:,.0f}<extra></extra>',
+    x=df["Month"], y=df["Sales"],
+    name="Actual Sales",
+    mode="lines",
+    line=dict(color="#E2E8F0", width=2),
+    fill="tozeroy",
+    fillcolor="rgba(226,232,240,0.04)",
+    hovertemplate="<b>Actual</b><br>%{x|%b %Y}<br>Sales: %{y:,.0f}<extra></extra>",
 ))
 
 if show_sma:
     fig.add_trace(go.Scatter(
-        x=df['Month'], y=df['SMA'],
-        name=f'SMA (n={n})',
-        mode='lines',
-        line=dict(color='#6C8FFF', width=2.5, dash='solid'),
-        hovertemplate=f'<b>SMA (n={n})</b><br>%{{x|%b %Y}}<br>Value: %{{y:,.0f}}<extra></extra>',
+        x=df["Month"], y=df["SMA"],
+        name=f"SMA (n={n})",
+        mode="lines",
+        line=dict(color="#6C8FFF", width=2.5, dash="solid"),
+        hovertemplate=f"<b>SMA (n={n})</b><br>%{{x|%b %Y}}<br>Value: %{{y:,.0f}}<extra></extra>",
     ))
 
 if show_wma:
     fig.add_trace(go.Scatter(
-        x=df['Month'], y=df['WMA'],
-        name=f'WMA (n={n})',
-        mode='lines',
-        line=dict(color='#22D3EE', width=2.5, dash='dot'),
-        hovertemplate=f'<b>WMA (n={n})</b><br>%{{x|%b %Y}}<br>Value: %{{y:,.0f}}<extra></extra>',
+        x=df["Month"], y=df["WMA"],
+        name=f"WMA (n={n})",
+        mode="lines",
+        line=dict(color="#22D3EE", width=2.5, dash="dot"),
+        hovertemplate=f"<b>WMA (n={n})</b><br>%{{x|%b %Y}}<br>Value: %{{y:,.0f}}<extra></extra>",
     ))
 
 if show_exp:
     fig.add_trace(go.Scatter(
-        x=df['Month'], y=df['Exp_Smoothing'],
-        name=f'Exp (α={alpha})',
-        mode='lines',
-        line=dict(color='#34D399', width=2.5, dash='dashdot'),
-        hovertemplate=f'<b>Exp (α={alpha})</b><br>%{{x|%b %Y}}<br>Value: %{{y:,.0f}}<extra></extra>',
+        x=df["Month"], y=df["Exp_Smoothing"],
+        name=f"Exp (α={alpha})",
+        mode="lines",
+        line=dict(color="#34D399", width=2.5, dash="dashdot"),
+        hovertemplate=f"<b>Exp (α={alpha})</b><br>%{{x|%b %Y}}<br>Value: %{{y:,.0f}}<extra></extra>",
     ))
 
 fig.update_layout(
-    template='plotly_dark',
-    paper_bgcolor='rgba(0,0,0,0)',
-    plot_bgcolor='rgba(0,0,0,0)',
-    font=dict(family='Inter, sans-serif', color='#94A3B8'),
+    template="plotly_dark",
+    paper_bgcolor="rgba(0,0,0,0)",
+    plot_bgcolor="rgba(0,0,0,0)",
+    font=dict(family="Inter, sans-serif", color="#94A3B8"),
     height=480,
     margin=dict(l=0, r=0, t=30, b=0),
     legend=dict(
-        orientation='h',
-        yanchor='bottom', y=1.02,
-        xanchor='left', x=0,
-        font=dict(size=12, color='#CBD5E1'),
-        bgcolor='rgba(0,0,0,0)',
+        orientation="h",
+        yanchor="bottom", y=1.02,
+        xanchor="left", x=0,
+        font=dict(size=12, color="#CBD5E1"),
+        bgcolor="rgba(0,0,0,0)",
     ),
     xaxis=dict(
         showgrid=False,
         zeroline=False,
-        tickformat='%b\n%Y',
-        dtick='M6',
+        tickformat="%b\n%Y",
+        dtick="M6",
         tickfont=dict(size=10),
     ),
     yaxis=dict(
         showgrid=True,
-        gridcolor='rgba(99,130,255,0.06)',
+        gridcolor="rgba(99,130,255,0.06)",
         zeroline=False,
         tickfont=dict(size=10),
-        tickprefix='',
+        tickprefix="",
     ),
-    hovermode='x unified',
+    hovermode="x unified",
     hoverlabel=dict(
-        bgcolor='#1E293B',
-        bordercolor='rgba(99,130,255,0.3)',
-        font=dict(color='#E2E8F0', family='Inter'),
+        bgcolor="#1E293B",
+        bordercolor="rgba(99,130,255,0.3)",
+        font=dict(color="#E2E8F0", family="Inter"),
     ),
 )
 
-st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False})
+st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
 
 # ─── Error Comparison Chart ──────────────────────────────────────
 st.markdown(
@@ -441,13 +448,13 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-col_chart, col_table = st.columns([1, 1], gap="large")
+col_chart, col_table = st.columns(2)
 
 with col_chart:
     bar_fig = go.Figure()
-    methods = ['SMA', 'WMA', 'Exponential']
+    methods = ["SMA", "WMA", "Exponential"]
     mae_vals = [mae_sma, mae_wma, mae_exp]
-    colors = ['#6C8FFF', '#22D3EE', '#34D399']
+    colors = ["#6C8FFF", "#22D3EE", "#34D399"]
 
     bar_fig.add_trace(go.Bar(
         x=methods,
@@ -455,35 +462,34 @@ with col_chart:
         marker=dict(
             color=colors,
             line=dict(width=0),
-            cornerradius=6,
         ),
-        text=[f'{v:,.0f}' for v in mae_vals],
-        textposition='outside',
-        textfont=dict(color='#CBD5E1', size=13, family='Inter'),
-        hovertemplate='<b>%{x}</b><br>MAE: %{y:,.1f}<extra></extra>',
+        text=[f"{v:,.0f}" for v in mae_vals],
+        textposition="outside",
+        textfont=dict(color="#CBD5E1", size=13, family="Inter"),
+        hovertemplate="<b>%{x}</b><br>MAE: %{y:,.1f}<extra></extra>",
         width=0.45,
     ))
 
     bar_fig.update_layout(
-        template='plotly_dark',
-        paper_bgcolor='rgba(0,0,0,0)',
-        plot_bgcolor='rgba(0,0,0,0)',
-        font=dict(family='Inter, sans-serif', color='#94A3B8'),
+        template="plotly_dark",
+        paper_bgcolor="rgba(0,0,0,0)",
+        plot_bgcolor="rgba(0,0,0,0)",
+        font=dict(family="Inter, sans-serif", color="#94A3B8"),
         height=300,
         margin=dict(l=0, r=0, t=10, b=0),
         xaxis=dict(
             showgrid=False,
-            tickfont=dict(size=12, color='#CBD5E1'),
+            tickfont=dict(size=12, color="#CBD5E1"),
         ),
         yaxis=dict(
             showgrid=True,
-            gridcolor='rgba(99,130,255,0.06)',
+            gridcolor="rgba(99,130,255,0.06)",
             zeroline=False,
             tickfont=dict(size=10),
         ),
         showlegend=False,
     )
-    st.plotly_chart(bar_fig, use_container_width=True, config={'displayModeBar': False})
+    st.plotly_chart(bar_fig, use_container_width=True, config={"displayModeBar": False})
 
 with col_table:
     st.markdown(
@@ -491,7 +497,7 @@ with col_table:
         unsafe_allow_html=True,
     )
     display_df = df.copy()
-    display_df['Month'] = display_df['Month'].dt.strftime('%b %Y')
+    display_df["Month"] = display_df["Month"].dt.strftime("%b %Y")
     display_df = display_df.round(1)
     st.dataframe(
         display_df.tail(12),
