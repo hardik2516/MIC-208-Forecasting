@@ -4,14 +4,6 @@
 
 ### A premium, interactive time-series forecasting tool built with Streamlit & Plotly
 
-[![Python](https://img.shields.io/badge/Python-3.8+-3776AB?style=for-the-badge&logo=python&logoColor=white)](https://python.org)
-[![Streamlit](https://img.shields.io/badge/Streamlit-1.x-FF4B4B?style=for-the-badge&logo=streamlit&logoColor=white)](https://streamlit.io)
-[![Plotly](https://img.shields.io/badge/Plotly-Interactive-3F4F75?style=for-the-badge&logo=plotly&logoColor=white)](https://plotly.com)
-[![License](https://img.shields.io/badge/License-MIT-22D3EE?style=for-the-badge)](LICENSE)
-
-<br />
-
-<img src="preview.png" alt="Dashboard Preview" width="100%" style="border-radius: 12px; box-shadow: 0 20px 60px rgba(0,0,0,0.3);" />
 
 <br />
 
@@ -45,8 +37,8 @@
 ### 1. Clone the Repository
 
 ```bash
-git clone https://github.com/yourusername/sales-forecasting-dashboard.git
-cd sales-forecasting-dashboard
+git clone https://github.com/hardik2516/MIC-208-Forecasting.git
+cd MIC-208-Forecasting
 ```
 
 ### 2. Install Dependencies
