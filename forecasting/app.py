@@ -3,6 +3,7 @@ import pandas as pd
 import numpy as np
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
+from pathlib import Path
 
 # ─── Page Config ────────────────────────────────────────────────
 st.set_page_config(
@@ -261,7 +262,8 @@ st.markdown("""
 st.markdown('<div class="premium-divider"></div>', unsafe_allow_html=True)
 
 # ─── Load Data ───────────────────────────────────────────────────
-df = pd.read_csv("monthly-writing-paper-sales.csv")
+DATA_DIR = Path(__file__).parent
+df = pd.read_csv(DATA_DIR / "monthly-writing-paper-sales.csv")
 df.columns = ["Month", "Sales"]
 df['Month'] = pd.date_range(start='2001-01', periods=len(df), freq='M')
 
